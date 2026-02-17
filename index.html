@@ -1,10 +1,117 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <title>テスト</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ころまるのだいぼうけん！</title>
+
+<style>
+body{
+    margin:0;
+    background:#87cfff;
+    font-family:sans-serif;
+    text-align:center;
+}
+
+#title{
+    position:absolute;
+    width:100%;
+    top:30%;
+}
+
+h1{
+    font-size:32px;
+}
+
+button{
+    font-size:24px;
+    padding:15px 40px;
+    border:none;
+    border-radius:20px;
+    background:#ffcc66;
+}
+
+#game{
+    display:none;
+}
+
+canvas{
+    background:#7ad66f;
+    touch-action:none;
+}
+</style>
 </head>
+
 <body>
-  <h1>公開成功！</h1>
+
+<div id="title">
+<h1>ころまるのだいぼうけん！<br>(かいぬしさんはどこ)</h1>
+<button onclick="startGame()">スタート！</button>
+</div>
+
+<div id="game">
+<canvas id="c" width="390" height="650"></canvas>
+</div>
+
+<script>
+const canvas=document.getElementById("c");
+const ctx=canvas.getContext("2d");
+
+let koromaru={x:180,y:500,size:30};
+let food=[];
+let score=0;
+
+function startGame(){
+ document.getElementById("title").style.display="none";
+ document.getElementById("game").style.display="block";
+ setInterval(update,30);
+}
+
+function spawn(){
+ food.push({x:Math.random()*360,y:-20});
+}
+
+setInterval(spawn,1200);
+
+function update(){
+ ctx.clearRect(0,0,390,650);
+
+ //ころまる
+ ctx.fillStyle="brown";
+ ctx.beginPath();
+ ctx.arc(koromaru.x,koromaru.y,koromaru.size,0,Math.PI*2);
+ ctx.fill();
+
+ ctx.fillStyle="black";
+ ctx.fillText("ころまる",koromaru.x-25,koromaru.y+50);
+
+ //エサ
+ ctx.fillStyle="pink";
+ for(let i=0;i<food.length;i++){
+   food[i].y+=4;
+   ctx.beginPath();
+   ctx.arc(food[i].x,food[i].y,15,0,Math.PI*2);
+   ctx.fill();
+
+   //当たり判定
+   let dx=food[i].x-koromaru.x;
+   let dy=food[i].y-koromaru.y;
+   if(Math.sqrt(dx*dx+dy*dy)<40){
+       score++;
+       food.splice(i,1);
+   }
+ }
+
+ ctx.fillStyle="black";
+ ctx.font="20px sans-serif";
+ ctx.fillText("おやつ:"+score,10,30);
+}
+
+//タッチ移動
+canvas.addEventListener("touchmove",e=>{
+ koromaru.x=e.touches[0].clientX-30;
+});
+</script>
+
 </body>
 </html>
