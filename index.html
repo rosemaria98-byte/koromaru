@@ -13,24 +13,31 @@ body{
     text-align:center;
 }
 
+/* タイトル画面（画像背景） */
 #title{
-    position:absolute;
+    position:fixed;
     width:100%;
-    top:30%;
-}
-
-h1{
-    font-size:32px;
+    height:100%;
+    top:0;
+    left:0;
+    background:url("title.png") center/cover no-repeat;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    align-items:center;
+    padding-bottom:80px;
+    box-sizing:border-box;
 }
 
 button{
-    font-size:24px;
-    padding:15px 40px;
+    font-size:26px;
+    padding:18px 60px;
     border:none;
-    border-radius:20px;
+    border-radius:25px;
     background:#ffcc66;
 }
 
+/* ゲーム画面 */
 #game{
     display:none;
 }
@@ -44,11 +51,12 @@ canvas{
 
 <body>
 
+<!-- タイトル -->
 <div id="title">
-<h1>ころまるのだいぼうけん！<br>(かいぬしさんはどこ)</h1>
 <button onclick="startGame()">スタート！</button>
 </div>
 
+<!-- ゲーム -->
 <div id="game">
 <canvas id="c" width="390" height="650"></canvas>
 </div>
@@ -85,7 +93,7 @@ function update(){
  ctx.fillStyle="black";
  ctx.fillText("ころまる",koromaru.x-25,koromaru.y+50);
 
- //エサ
+ //おやつ
  ctx.fillStyle="pink";
  for(let i=0;i<food.length;i++){
    food[i].y+=4;
@@ -93,7 +101,6 @@ function update(){
    ctx.arc(food[i].x,food[i].y,15,0,Math.PI*2);
    ctx.fill();
 
-   //当たり判定
    let dx=food[i].x-koromaru.x;
    let dy=food[i].y-koromaru.y;
    if(Math.sqrt(dx*dx+dy*dy)<40){
@@ -107,7 +114,7 @@ function update(){
  ctx.fillText("おやつ:"+score,10,30);
 }
 
-//タッチ移動
+//タッチで移動
 canvas.addEventListener("touchmove",e=>{
  koromaru.x=e.touches[0].clientX-30;
 });
