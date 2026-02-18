@@ -9,6 +9,7 @@ body{
   background:#ffeef5;
   overflow:hidden;
   font-family:sans-serif;
+  touch-action:none;
 }
 canvas{
   display:block;
@@ -54,7 +55,7 @@ let emotionTimer=0;
 
 // ===== プレイヤー =====
 let player={
- x:180,
+ x:140,
  y:450,
  vy:0,
  onGround:true,
@@ -74,12 +75,42 @@ function spawnItem(){
 }
 setInterval(spawnItem,900);
 
-// ===== 操作 =====
-document.addEventListener("touchstart",jump);
-document.addEventListener("keydown",e=>{
- if(e.code==="Space") jump();
+// ===== 操作（スマホ対応 横移動）=====
+let touching=false;
+
+canvas.addEventListener("touchstart",e=>{
+ touching=true;
+ movePlayer(e);
+ jump();
 });
 
+canvas.addEventListener("touchmove",e=>{
+ if(touching) movePlayer(e);
+});
+
+canvas.addEventListener("touchend",()=>{
+ touching=false;
+});
+
+function movePlayer(e){
+ const rect = canvas.getBoundingClientRect();
+ const touchX = e.touches[0].clientX - rect.left;
+
+ player.x = touchX - player.size/2;
+
+ if(player.x<0) player.x=0;
+ if(player.x>canvas.width-player.size)
+   player.x=canvas.width-player.size;
+}
+
+// PC操作
+document.addEventListener("keydown",e=>{
+ if(e.code==="Space") jump();
+ if(e.code==="ArrowLeft") player.x-=25;
+ if(e.code==="ArrowRight") player.x+=25;
+});
+
+// ジャンプ
 function jump(){
  if(player.onGround){
   player.vy=-15;
