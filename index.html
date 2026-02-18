@@ -2,122 +2,164 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ころまるのだいぼうけん！</title>
-
+<title>ころまるジャンプ</title>
 <style>
 body{
-    margin:0;
-    background:#87cfff;
-    font-family:sans-serif;
-    text-align:center;
+  margin:0;
+  background:#ffeef5;
+  overflow:hidden;
+  font-family:sans-serif;
 }
-
-/* タイトル画面（画像背景） */
-#title{
-    position:fixed;
-    width:100%;
-    height:100%;
-    top:0;
-    left:0;
-    background:url("title.png") center/cover no-repeat;
-    display:flex;
-    flex-direction:column;
-    justify-content:flex-end;
-    align-items:center;
-    padding-bottom:80px;
-    box-sizing:border-box;
-}
-
-button{
-    font-size:26px;
-    padding:18px 60px;
-    border:none;
-    border-radius:25px;
-    background:#ffcc66;
-}
-
-/* ゲーム画面 */
-#game{
-    display:none;
-}
-
 canvas{
-    background:#7ad66f;
-    touch-action:none;
+  display:block;
+  margin:auto;
+  background:#fff;
+}
+#hp{
+  position:absolute;
+  left:10px;
+  top:10px;
+  font-size:20px;
+  font-weight:bold;
 }
 </style>
 </head>
-
 <body>
 
-<!-- タイトル -->
-<div id="title">
-<button onclick="startGame()">スタート！</button>
-</div>
-
-<!-- ゲーム -->
-<div id="game">
-<canvas id="c" width="390" height="650"></canvas>
-</div>
+<div id="hp">HP: 5</div>
+<canvas id="game" width="400" height="600"></canvas>
 
 <script>
-const canvas=document.getElementById("c");
-const ctx=canvas.getContext("2d");
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-let koromaru={x:180,y:500,size:30};
-let food=[];
-let score=0;
+let hp = 5;
 
-function startGame(){
- document.getElementById("title").style.display="none";
- document.getElementById("game").style.display="block";
- setInterval(update,30);
+// ===== ころまる画像 =====
+const koro = {
+ idle:new Image(),
+ jump:new Image(),
+ happy:new Image(),
+ hit:new Image(),
+ dead:new Image()
+};
+koro.idle.src="koromaru_idle.png";
+koro.jump.src="koromaru_jump.png";
+koro.happy.src="koromaru_happy.png";
+koro.hit.src="koromaru_hit.png";
+koro.dead.src="koromaru_dead.png";
+
+let current=koro.idle;
+let emotionTimer=0;
+
+// ===== プレイヤー =====
+let player={
+ x:180,
+ y:450,
+ vy:0,
+ onGround:true,
+ size:120
+};
+
+// ===== アイテム =====
+let items=[];
+
+function spawnItem(){
+ let type=Math.random()<0.7?"snack":"bomb";
+ items.push({
+  x:Math.random()350,
+  y:-50,
+  type:type
+ });
+}
+setInterval(spawnItem,900);
+
+// ===== 操作 =====
+document.addEventListener("touchstart",jump);
+document.addEventListener("keydown",e=>{
+ if(e.code==="Space") jump();
+});
+
+function jump(){
+ if(player.onGround){
+  player.vy=-15;
+  player.onGround=false;
+ }
 }
 
-function spawn(){
- food.push({x:Math.random()*360,y:-20});
-}
-
-setInterval(spawn,1200);
-
+// ===== 更新 =====
 function update(){
- ctx.clearRect(0,0,390,650);
 
- //ころまる
- ctx.fillStyle="brown";
- ctx.beginPath();
- ctx.arc(koromaru.x,koromaru.y,koromaru.size,0,Math.PI*2);
- ctx.fill();
+ //重力
+ player.vy+=0.8;
+ player.y+=player.vy;
 
- ctx.fillStyle="black";
- ctx.fillText("ころまる",koromaru.x-25,koromaru.y+50);
-
- //おやつ
- ctx.fillStyle="pink";
- for(let i=0;i<food.length;i++){
-   food[i].y+=4;
-   ctx.beginPath();
-   ctx.arc(food[i].x,food[i].y,15,0,Math.PI*2);
-   ctx.fill();
-
-   let dx=food[i].x-koromaru.x;
-   let dy=food[i].y-koromaru.y;
-   if(Math.sqrt(dx*dx+dy*dy)<40){
-       score++;
-       food.splice(i,1);
-   }
+ if(player.y>450){
+  player.y=450;
+  player.vy=0;
+  player.onGround=true;
  }
 
- ctx.fillStyle="black";
- ctx.font="20px sans-serif";
- ctx.fillText("おやつ:"+score,10,30);
+ // 表情（感情優先）
+ if(emotionTimer>0){
+  emotionTimer--;
+ }else{
+  if(player.onGround) current=koro.idle;
+  else current=koro.jump;
+ }
+
+ // アイテム
+ items.forEach(i=>{
+  i.y+=5;
+
+  // 当たり判定
+  if(
+   i.x<player.x+80 &&
+   i.x+40>player.x &&
+   i.y<player.y+80 &&
+   i.y+40>player.y
+  ){
+   if(i.type=="snack"){
+    current=koro.happy;
+    emotionTimer=20;
+   }else{
+    hp--;
+    document.getElementById("hp").textContent="HP: "+hp;
+    current=koro.hit;
+    emotionTimer=25;
+
+    if(hp<=0){
+     current=koro.dead;
+    }
+   }
+   i.y=700;
+  }
+ });
+
+ items=items.filter(i=>i.y<650);
 }
 
-//タッチで移動
-canvas.addEventListener("touchmove",e=>{
- koromaru.x=e.touches[0].clientX-30;
-});
+// ===== 描画 =====
+function draw(){
+ ctx.clearRect(0,0,400,600);
+
+ ctx.drawImage(current,player.x,player.y,player.size,player.size);
+
+ items.forEach(i=>{
+  ctx.fillStyle=i.type=="snack"?"#ffcc66":"#333";
+  ctx.beginPath();
+  ctx.arc(i.x+20,i.y+20,20,0,Math.PI2);
+  ctx.fill();
+ });
+}
+
+// ===== ループ =====
+function loop(){
+ update();
+ draw();
+ requestAnimationFrame(loop);
+}
+loop();
 </script>
 
 </body>
