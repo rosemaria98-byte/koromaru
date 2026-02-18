@@ -34,10 +34,16 @@ function resize(){
 resize();
 window.addEventListener("resize",resize);
 
-let hp = 5;
+// ===== 状態 =====
+let scene="title"; // title, game, gameover
 
-// ===== ころまる画像 =====
-const koro = {
+let hp=5;
+
+// ===== 画像 =====
+const titleImg=new Image();
+titleImg.src="title.png";
+
+const koro={
  idle:new Image(),
  jump:new Image(),
  happy:new Image(),
@@ -53,13 +59,13 @@ koro.dead.src="koromaru_dead.png";
 let current=koro.idle;
 let emotionTimer=0;
 
-// ⭐ サイズ2倍（360）
+// ===== プレイヤー =====
 let player={
- x:100,
+ x:50,
  y:0,
  vy:0,
  onGround:true,
- size:360
+ size:540
 };
 
 function groundY(){
@@ -70,50 +76,63 @@ function groundY(){
 let items=[];
 
 function spawnItem(){
+ if(scene!=="game") return;
  let type=Math.random()<0.7?"snack":"bomb";
  items.push({
-  x: Math.random()*(canvas.width-60),
-  y:-60,
+  x: Math.random()*(canvas.width-80),
+  y:-80,
   type:type,
-  r:30
+  r:35
  });
 }
-setInterval(spawnItem,900);
+setInterval(spawnItem,1000);
 
 // ===== 操作 =====
-let touching=false;
-
 canvas.addEventListener("touchstart",e=>{
- touching=true;
+ if(scene==="title"){
+  startGame();
+  return;
+ }
+ if(scene==="gameover"){
+  scene="title";
+  return;
+ }
  movePlayer(e);
  jump();
 });
-canvas.addEventListener("touchmove",e=>{
- if(touching) movePlayer(e);
-});
-canvas.addEventListener("touchend",()=>touching=false);
+
+canvas.addEventListener("touchmove",movePlayer);
+
+function startGame(){
+ hp=5;
+ items=[];
+ player.y=groundY();
+ player.vy=0;
+ scene="game";
+}
 
 function movePlayer(e){
- const rect = canvas.getBoundingClientRect();
- const touchX = e.touches[0].clientX - rect.left;
- player.x = touchX - player.size/2;
-
- if(player.x<0) player.x=0;
+ if(scene!=="game") return;
+ const rect=canvas.getBoundingClientRect();
+ const touchX=e.touches[0].clientX-rect.left;
+ player.x=touchX-player.size/2;
+ if(player.x<0)player.x=0;
  if(player.x>canvas.width-player.size)
    player.x=canvas.width-player.size;
 }
 
 function jump(){
  if(player.onGround){
-  player.vy=-22;
+  player.vy=-28;
   player.onGround=false;
  }
 }
 
 // ===== 更新 =====
 function update(){
+ if(scene!=="game") return;
 
- player.vy+=1.0;
+ player.vy+=1.2;
  player.y+=player.vy;
 
  if(player.y>groundY()){
@@ -122,61 +141,72 @@ function update(){
   player.onGround=true;
  }
 
- if(emotionTimer>0){
-  emotionTimer--;
- }else{
-  current=player.onGround?koro.idle:koro.jump;
- }
+ if(emotionTimer>0) emotionTimer--;
+ else current=player.onGround?koro.idle:koro.jump;
 
  items.forEach(i=>{
-  i.y+=7;
+  i.y+=8;
 
-  // 当たり判定をサイズ基準に
   if(
-   i.x < player.x + player.size*0.8 &&
-   i.x + i.r*2 > player.x + player.size*0.2 &&
-   i.y < player.y + player.size*0.8 &&
-   i.y + i.r*2 > player.y + player.size*0.2
+   i.x<player.x+player.size*0.75 &&
+   i.x+i.r*2>player.x+player.size*0.25 &&
+   i.y<player.y+player.size*0.75 &&
+   i.y+i.r*2>player.y+player.size*0.25
   ){
-   if(i.type=="snack"){
+   if(i.type==="snack"){
     current=koro.happy;
     emotionTimer=20;
    }else{
     hp--;
     current=koro.hit;
-    emotionTimer=25;
-    if(hp<=0) current=koro.dead;
+    emotionTimer=30;
+    if(hp<=0) scene="gameover";
    }
-   i.y=canvas.height+100;
+   i.y=canvas.height+200;
   }
  });
-
- items=items.filter(i=>i.y<canvas.height+80);
 }
 
 // ===== 描画 =====
 function draw(){
  ctx.clearRect(0,0,canvas.width,canvas.height);
 
+ if(scene==="title"){
+  ctx.drawImage(titleImg,0,0,canvas.width,canvas.height);
+  ctx.fillStyle="#fff";
+  ctx.font="bold 40px sans-serif";
+  ctx.fillText("タップしてスタート",canvas.width/2-160,canvas.height*0.8);
+  return;
+ }
+
+ if(scene==="gameover"){
+  ctx.fillStyle="#000";
+  ctx.font="bold 60px sans-serif";
+  ctx.fillText("GAME OVER",canvas.width/2-180,canvas.height/2);
+  ctx.font="30px sans-serif";
+  ctx.fillText("タップでタイトルへ",canvas.width/2-150,canvas.height/2+60);
+  return;
+ }
+
  // 地面
  ctx.fillStyle="#ffddee";
- ctx.fillRect(0,groundY()+player.size-15,canvas.width,40);
+ ctx.fillRect(0,groundY()+player.size-20,canvas.width,50);
 
  // ころまる
  ctx.drawImage(current,player.x,player.y,player.size,player.size);
 
  // アイテム
  items.forEach(i=>{
-  ctx.fillStyle=i.type=="snack"?"#ffcc66":"#333";
+  ctx.fillStyle=i.type=="snack"?"#ffcc66":"#222";
   ctx.beginPath();
   ctx.arc(i.x+i.r,i.y+i.r,i.r,0,Math.PI*2);
   ctx.fill();
  });
 
- // HP表示
- ctx.fillStyle="#ff4d6d";
- ctx.font="bold 30px sans-serif";
- ctx.fillText("HP: "+hp,20,45);
+ // HP
+ ctx.fillStyle="#ff3366";
+ ctx.font="bold 36px sans-serif";
+ ctx.fillText("HP: "+hp,30,60);
 }
 
 // ===== ループ =====
