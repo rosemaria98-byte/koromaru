@@ -13,26 +13,26 @@ body{
 }
 canvas{
   display:block;
-  margin:auto;
+  margin:0 auto;
   background:#fff;
-}
-#hp{
-  position:absolute;
-  left:10px;
-  top:10px;
-  font-size:20px;
-  font-weight:bold;
 }
 </style>
 </head>
 <body>
 
-<div id="hp">HP: 5</div>
-<canvas id="game" width="400" height="600"></canvas>
+<canvas id="game"></canvas>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+
+// ===== 画面サイズ自動調整 =====
+function resize(){
+ canvas.width = window.innerWidth;
+ canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize",resize);
 
 let hp = 5;
 
@@ -55,12 +55,16 @@ let emotionTimer=0;
 
 // ===== プレイヤー =====
 let player={
- x:140,
- y:450,
+ x:150,
+ y:0,
  vy:0,
  onGround:true,
- size:120
+ size:140
 };
+
+function groundY(){
+ return canvas.height-160;
+}
 
 // ===== アイテム =====
 let items=[];
@@ -68,14 +72,14 @@ let items=[];
 function spawnItem(){
  let type=Math.random()<0.7?"snack":"bomb";
  items.push({
-  x: Math.random()*350,
+  x: Math.random()*(canvas.width-40),
   y:-50,
   type:type
  });
 }
 setInterval(spawnItem,900);
 
-// ===== 操作（スマホ対応 横移動）=====
+// ===== 操作 =====
 let touching=false;
 
 canvas.addEventListener("touchstart",e=>{
@@ -83,19 +87,14 @@ canvas.addEventListener("touchstart",e=>{
  movePlayer(e);
  jump();
 });
-
 canvas.addEventListener("touchmove",e=>{
  if(touching) movePlayer(e);
 });
-
-canvas.addEventListener("touchend",()=>{
- touching=false;
-});
+canvas.addEventListener("touchend",()=>touching=false);
 
 function movePlayer(e){
  const rect = canvas.getBoundingClientRect();
  const touchX = e.touches[0].clientX - rect.left;
-
  player.x = touchX - player.size/2;
 
  if(player.x<0) player.x=0;
@@ -103,17 +102,9 @@ function movePlayer(e){
    player.x=canvas.width-player.size;
 }
 
-// PC操作
-document.addEventListener("keydown",e=>{
- if(e.code==="Space") jump();
- if(e.code==="ArrowLeft") player.x-=25;
- if(e.code==="ArrowRight") player.x+=25;
-});
-
-// ジャンプ
 function jump(){
  if(player.onGround){
-  player.vy=-15;
+  player.vy=-18;
   player.onGround=false;
  }
 }
@@ -121,11 +112,11 @@ function jump(){
 // ===== 更新 =====
 function update(){
 
- player.vy+=0.8;
+ player.vy+=0.9;
  player.y+=player.vy;
 
- if(player.y>450){
-  player.y=450;
+ if(player.y>groundY()){
+  player.y=groundY();
   player.vy=0;
   player.onGround=true;
  }
@@ -133,17 +124,16 @@ function update(){
  if(emotionTimer>0){
   emotionTimer--;
  }else{
-  if(player.onGround) current=koro.idle;
-  else current=koro.jump;
+  current=player.onGround?koro.idle:koro.jump;
  }
 
  items.forEach(i=>{
-  i.y+=5;
+  i.y+=6;
 
   if(
-   i.x<player.x+80 &&
+   i.x<player.x+100 &&
    i.x+40>player.x &&
-   i.y<player.y+80 &&
+   i.y<player.y+100 &&
    i.y+40>player.y
   ){
    if(i.type=="snack"){
@@ -151,33 +141,40 @@ function update(){
     emotionTimer=20;
    }else{
     hp--;
-    document.getElementById("hp").textContent="HP: "+hp;
     current=koro.hit;
     emotionTimer=25;
-
-    if(hp<=0){
-     current=koro.dead;
-    }
+    if(hp<=0) current=koro.dead;
    }
-   i.y=700;
+   i.y=canvas.height+100;
   }
  });
 
- items=items.filter(i=>i.y<650);
+ items=items.filter(i=>i.y<canvas.height+50);
 }
 
 // ===== 描画 =====
 function draw(){
- ctx.clearRect(0,0,400,600);
+ ctx.clearRect(0,0,canvas.width,canvas.height);
 
+ // 地面
+ ctx.fillStyle="#ffddee";
+ ctx.fillRect(0,groundY()+player.size-20,canvas.width,40);
+
+ // ころまる
  ctx.drawImage(current,player.x,player.y,player.size,player.size);
 
+ // アイテム
  items.forEach(i=>{
   ctx.fillStyle=i.type=="snack"?"#ffcc66":"#333";
   ctx.beginPath();
   ctx.arc(i.x+20,i.y+20,20,0,Math.PI*2);
   ctx.fill();
  });
+
+ // ★HPを画面内に描画
+ ctx.fillStyle="#ff4d6d";
+ ctx.font="bold 28px sans-serif";
+ ctx.fillText("HP: "+hp,20,40);
 }
 
 // ===== ループ =====
