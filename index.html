@@ -26,7 +26,7 @@ canvas{
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-// ===== 画面サイズ自動調整 =====
+// ===== 画面サイズ =====
 function resize(){
  canvas.width = window.innerWidth;
  canvas.height = window.innerHeight;
@@ -53,18 +53,17 @@ koro.dead.src="koromaru_dead.png";
 let current=koro.idle;
 let emotionTimer=0;
 
-// ===== プレイヤー（サイズ180！）=====
+// ⭐ サイズ2倍（360）
 let player={
- x:150,
+ x:100,
  y:0,
  vy:0,
  onGround:true,
- size:180
+ size:360
 };
 
-// 地面をサイズ基準にする
 function groundY(){
- return canvas.height-player.size-20;
+ return canvas.height-player.size-10;
 }
 
 // ===== アイテム =====
@@ -73,9 +72,10 @@ let items=[];
 function spawnItem(){
  let type=Math.random()<0.7?"snack":"bomb";
  items.push({
-  x: Math.random()*(canvas.width-40),
-  y:-50,
-  type:type
+  x: Math.random()*(canvas.width-60),
+  y:-60,
+  type:type,
+  r:30
  });
 }
 setInterval(spawnItem,900);
@@ -105,7 +105,7 @@ function movePlayer(e){
 
 function jump(){
  if(player.onGround){
-  player.vy=-18;
+  player.vy=-22;
   player.onGround=false;
  }
 }
@@ -113,7 +113,7 @@ function jump(){
 // ===== 更新 =====
 function update(){
 
- player.vy+=0.9;
+ player.vy+=1.0;
  player.y+=player.vy;
 
  if(player.y>groundY()){
@@ -129,13 +129,14 @@ function update(){
  }
 
  items.forEach(i=>{
-  i.y+=6;
+  i.y+=7;
 
+  // 当たり判定をサイズ基準に
   if(
-   i.x<player.x+120 &&
-   i.x+40>player.x &&
-   i.y<player.y+120 &&
-   i.y+40>player.y
+   i.x < player.x + player.size*0.8 &&
+   i.x + i.r*2 > player.x + player.size*0.2 &&
+   i.y < player.y + player.size*0.8 &&
+   i.y + i.r*2 > player.y + player.size*0.2
   ){
    if(i.type=="snack"){
     current=koro.happy;
@@ -150,7 +151,7 @@ function update(){
   }
  });
 
- items=items.filter(i=>i.y<canvas.height+50);
+ items=items.filter(i=>i.y<canvas.height+80);
 }
 
 // ===== 描画 =====
@@ -159,7 +160,7 @@ function draw(){
 
  // 地面
  ctx.fillStyle="#ffddee";
- ctx.fillRect(0,groundY()+player.size-20,canvas.width,40);
+ ctx.fillRect(0,groundY()+player.size-15,canvas.width,40);
 
  // ころまる
  ctx.drawImage(current,player.x,player.y,player.size,player.size);
@@ -168,14 +169,14 @@ function draw(){
  items.forEach(i=>{
   ctx.fillStyle=i.type=="snack"?"#ffcc66":"#333";
   ctx.beginPath();
-  ctx.arc(i.x+20,i.y+20,20,0,Math.PI*2);
+  ctx.arc(i.x+i.r,i.y+i.r,i.r,0,Math.PI*2);
   ctx.fill();
  });
 
  // HP表示
  ctx.fillStyle="#ff4d6d";
- ctx.font="bold 28px sans-serif";
- ctx.fillText("HP: "+hp,20,40);
+ ctx.font="bold 30px sans-serif";
+ ctx.fillText("HP: "+hp,20,45);
 }
 
 // ===== ループ =====
