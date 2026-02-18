@@ -67,7 +67,7 @@ let items=[];
 function spawnItem(){
  let type=Math.random()<0.7?"snack":"bomb";
  items.push({
-  x:Math.random()350,
+  x: Math.random()*350,
   y:-50,
   type:type
  });
@@ -90,7 +90,6 @@ function jump(){
 // ===== 更新 =====
 function update(){
 
- //重力
  player.vy+=0.8;
  player.y+=player.vy;
 
@@ -100,7 +99,6 @@ function update(){
   player.onGround=true;
  }
 
- // 表情（感情優先）
  if(emotionTimer>0){
   emotionTimer--;
  }else{
@@ -108,11 +106,9 @@ function update(){
   else current=koro.jump;
  }
 
- // アイテム
  items.forEach(i=>{
   i.y+=5;
 
-  // 当たり判定
   if(
    i.x<player.x+80 &&
    i.x+40>player.x &&
@@ -148,7 +144,7 @@ function draw(){
  items.forEach(i=>{
   ctx.fillStyle=i.type=="snack"?"#ffcc66":"#333";
   ctx.beginPath();
-  ctx.arc(i.x+20,i.y+20,20,0,Math.PI2);
+  ctx.arc(i.x+20,i.y+20,20,0,Math.PI*2);
   ctx.fill();
  });
 }
