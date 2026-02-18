@@ -53,17 +53,18 @@ koro.dead.src="koromaru_dead.png";
 let current=koro.idle;
 let emotionTimer=0;
 
-// ===== プレイヤー =====
+// ===== プレイヤー（サイズ180！）=====
 let player={
  x:150,
  y:0,
  vy:0,
  onGround:true,
- size:140
+ size:180
 };
 
+// 地面をサイズ基準にする
 function groundY(){
- return canvas.height-160;
+ return canvas.height-player.size-20;
 }
 
 // ===== アイテム =====
@@ -131,9 +132,9 @@ function update(){
   i.y+=6;
 
   if(
-   i.x<player.x+100 &&
+   i.x<player.x+120 &&
    i.x+40>player.x &&
-   i.y<player.y+100 &&
+   i.y<player.y+120 &&
    i.y+40>player.y
   ){
    if(i.type=="snack"){
@@ -171,7 +172,7 @@ function draw(){
   ctx.fill();
  });
 
- // ★HPを画面内に描画
+ // HP表示
  ctx.fillStyle="#ff4d6d";
  ctx.font="bold 28px sans-serif";
  ctx.fillText("HP: "+hp,20,40);
