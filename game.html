@@ -100,13 +100,12 @@ function update(){
   player.onGround=true;
  }
 
- // 表情
- if(player.onGround) current=koro.idle;
- else current=koro.jump;
-
+ // 表情（感情優先）
  if(emotionTimer>0){
   emotionTimer--;
-  if(emotionTimer==0) current=koro.idle;
+ }else{
+  if(player.onGround) current=koro.idle;
+  else current=koro.jump;
  }
 
  // アイテム
